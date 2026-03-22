@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mouna — Breast Cancer Risk Assessment</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#030712;--surface:#0d1117;--surface2:#161b22;--border:#1a2535;--text:#e8edf5;--muted:#94a3b8;--accent:#ff4d6d;--accent2:#ff8fa3;--teal:#00d4ff;--green:#00e5a0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+.grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(255,77,109,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,77,109,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0}
+.orb{position:fixed;border-radius:50%;filter:blur(100px);pointer-events:none;z-index:0}
+.orb-1{width:400px;height:400px;background:radial-gradient(circle,rgba(255,77,109,0.08),transparent 70%);top:-100px;right:-100px}
+.orb-2{width:300px;height:300px;background:radial-gradient(circle,rgba(0,212,255,0.05),transparent 70%);bottom:0;left:0}
+
+header{position:relative;z-index:2;padding:2rem 3rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--text)}
+.logo span{color:var(--accent)}
+.disclaimer-badge{padding:.35rem .9rem;border:1px solid rgba(255,77,109,.3);border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--accent);background:rgba(255,77,109,.05)}
+
+main{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:3rem 2rem}
+.hero{text-align:center;margin-bottom:3rem}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:800;line-height:1;letter-spacing:-.03em;margin-bottom:1rem}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--muted);font-size:1rem;line-height:1.8;max-width:600px;margin:0 auto}
+
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.form-section{padding:1.5rem 2rem;border-bottom:1px solid var(--border)}
+.form-section:last-child{border-bottom:none}
+.section-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem}
+.section-icon{font-size:1.1rem}
+.section-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.06em}
+.section-badge{padding:.2rem .6rem;background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.2);border-radius:20px;font-size:.65rem;color:var(--accent);font-family:'JetBrains Mono',monospace}
+
+.form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.form-group{display:flex;flex-direction:column;gap:.4rem}
+.form-group.span2{grid-column:span 2}
+label{font-size:.75rem;color:var(--muted);font-weight:500;letter-spacing:.03em}
+input,select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.65rem .9rem;color:var(--text);font-size:.85rem;font-family:'Inter',sans-serif;transition:border-color .2s;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
+input::placeholder{color:#4a5568}
+select option{background:var(--surface2)}
+.unit{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+
+.biomarker-note{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.8rem;color:var(--teal);line-height:1.6}
+
+.submit-section{padding:1.5rem 2rem;background:var(--surface2)}
+.btn-assess{width:100%;padding:1.1rem;background:linear-gradient(135deg,var(--accent),#cc2244);color:white;font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;letter-spacing:.03em;border:none;border-radius:10px;cursor:pointer;transition:all .3s}
+.btn-assess:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,77,109,.4)}
+.btn-assess:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* RESULT */
+#result{display:none;margin-top:2rem;background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--border);animation:slideUp .4s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.result-header{padding:2rem;text-align:center;border-bottom:1px solid var(--border)}
+.risk-label{font-family:'JetBrains Mono',monospace;font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem}
+.risk-score{font-family:'Syne',sans-serif;font-size:4rem;font-weight:800;line-height:1}
+.risk-category{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;margin-top:.25rem}
+.result-bar-container{padding:1.5rem 2rem;border-bottom:1px solid var(--border)}
+.result-bar-bg{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden;margin-bottom:.5rem}
+.result-bar-fill{height:100%;border-radius:6px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+.bar-labels{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.result-body{padding:1.5rem 2rem}
+.result-recommendation{padding:1rem 1.25rem;border-radius:8px;font-size:.9rem;line-height:1.6;margin-bottom:1.25rem;border-left:3px solid}
+.factors-title{font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem}
+.factor-item{display:flex;align-items:flex-start;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.85rem;color:var(--text)}
+.factor-item:last-child{border-bottom:none}
+.factor-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:.4rem;flex-shrink:0}
+.disclaimer-box{margin-top:1.25rem;padding:.75rem 1rem;background:rgba(255,77,109,.05);border:1px solid rgba(255,77,109,.15);border-radius:8px;font-size:.75rem;color:var(--muted);line-height:1.6;font-style:italic}
+
+footer{position:relative;z-index:2;text-align:center;padding:2rem;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:3rem}
+footer span{color:var(--accent)}
+
+@media(max-width:768px){.form-grid{grid-template-columns:1fr 1fr}header{padding:1rem 1.5rem}main{padding:2rem 1rem}}
+@media(max-width:480px){.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<header>
+  <div class="logo">Mouna<span>.</span></div>
+  <div class="disclaimer-badge">⚠ Research Prototype — Not for Clinical Use</div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Breast Cancer <em>Risk Assessment</em></h1>
+    <p>A two-minute risk stratification tool combining health questionnaire data and blood biomarkers — designed to identify women who may benefit from further medical evaluation.</p>
+  </div>
+
+  <div class="form-card">
+
+    <!-- Section 1: Demographics -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-icon">👤</span>
+        <span class="section-title">Demographics</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Age (years)</label>
+          <input type="number" id="age" min="30" max="75" placeholder="e.g. 52">
+          <span class="unit">30 – 75 years</span>
+        </div>
+        <div class="form-group">
+          <label>BMI (kg/m²)</label>
+          <input type="number" id="bmi" step="0.1" min="16" max="50" placeholder="e.g. 26.5">
+          <span class="unit">Weight(kg) / Height(m)²</span>
+        </div>
+        <div class="form-group">
+          <label>Physical Activity</label>
+          <select id="physical_activity">
+            <option value="0">Sedentary (none)</option>
+            <option value="1" selected>Moderate (1-3x/week)</option>
+            <option value="2">Active (4+x/week)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Reproductive History -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-icon">🩺</span>
+        <span class="section-title">Reproductive History</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Age at First Period</label>
+          <input type="number" id="age_menarche" min="9" max="18" placeholder="e.g. 13">
+        </div>
+        <div class="form-group">
+          <label>Age at Menopause</label>
+          <input type="number" id="age_menopause" min="35" max="65" placeholder="e.g. 50">
+          <span class="unit">Enter 50 if pre-menopausal</span>
+        </div>
+        <div class="form-group">
+          <label>Number of Pregnancies</label>
+          <input type="number" id="parity" min="0" max="10" placeholder="e.g. 2">
+        </div>
+        <div class="form-group">
+          <label>Breastfed?</label>
+          <select id="breastfeeding">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Total Breastfeeding (years)</label>
+          <input type="number" id="breastfeed_years" step="0.5" min="0" max="10" placeholder="e.g. 1.5">
+        </div>
+        <div class="form-group">
+          <label>HRT Use</label>
+          <select id="hrt_use">
+            <option value="0">No / Never</option>
+            <option value="1">Yes / Currently</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Oral Contraceptive Use</label>
+          <select id="oral_contraceptive_use">
+            <option value="0">No / Never</option>
+            <option value="1">Yes / Currently</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Family History -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-icon">🧬</span>
+        <span class="section-title">Family & Genetic History</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>1st Degree Relative with Breast Cancer</label>
+          <select id="family_history_1st">
+            <option value="0">No</option>
+            <option value="1">Yes (mother/sister/daughter)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>2nd Degree Relative with Breast Cancer</label>
+          <select id="family_history_2nd">
+            <option value="0">No</option>
+            <option value="1">Yes (aunt/grandmother)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Known BRCA Mutation</label>
+          <select id="brca_mutation">
+            <option value="0">No / Unknown</option>
+            <option value="1">Yes — BRCA1 or BRCA2</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prior Benign Breast Biopsy</label>
+          <select id="prior_benign_biopsy">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Lifestyle -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-icon">🌿</span>
+        <span class="section-title">Lifestyle</span>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Alcohol (drinks/week)</label>
+          <select id="alcohol_drinks_week">
+            <option value="0">None</option>
+            <option value="1">1-2 per week</option>
+            <option value="2">3-5 per week</option>
+            <option value="3">6+ per week</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Smoking</label>
+          <select id="smoking">
+            <option value="0">Non-smoker</option>
+            <option value="1">Current or former smoker</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Blood Biomarkers -->
+    <div class="form-section">
+      <div class="section-header">
+        <span class="section-icon">🩸</span>
+        <span class="section-title">Blood Biomarkers</span>
+        <span class="section-badge">Finger-prick test</span>
+      </div>
+      <div class="biomarker-note">
+        💡 These values come from a standard liver function test — available at most clinics for under $5. Normal ranges: GGT 5-40 U/L · ALT 7-35 U/L (women). Leave at normal values if unavailable.
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>GGT (U/L)</label>
+          <input type="number" id="ggt" step="0.1" min="1" max="500" placeholder="e.g. 22">
+          <span class="unit">Normal: 5–40 U/L</span>
+        </div>
+        <div class="form-group">
+          <label>ALT (U/L)</label>
+          <input type="number" id="alt" step="0.1" min="1" max="300" placeholder="e.g. 18">
+          <span class="unit">Normal: 7–35 U/L</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-section">
+      <button class="btn-assess" id="submit-btn" onclick="assess()">
+        Calculate Risk Score →
+      </button>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result">
+    <div class="result-header">
+      <div class="risk-label">Mouna Risk Assessment</div>
+      <div class="risk-score" id="risk-score-num">--</div>
+      <div style="font-size:.9rem;color:var(--muted);margin:.25rem 0">/100</div>
+      <div class="risk-category" id="risk-category">--</div>
+    </div>
+    <div class="result-bar-container">
+      <div class="result-bar-bg">
+        <div class="result-bar-fill" id="risk-bar" style="width:0%"></div>
+      </div>
+      <div class="bar-labels">
+        <span>Low</span><span>Moderate</span><span>High</span><span>Very High</span>
+      </div>
+    </div>
+    <div class="result-body">
+      <div class="result-recommendation" id="recommendation"></div>
+      <div class="factors-title">Key Contributing Factors</div>
+      <div id="factors-list"></div>
+      <div class="disclaimer-box" id="disclaimer-text"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <p><span>Mouna</span> — Breast Cancer Risk Assessment Tool</p>
+  <p style="margin-top:.4rem">Developed by Hidayet Allah Yaakoubi · Tunisia 🇹🇳 · Research Prototype</p>
+</footer>
+
+<script>
+async function assess() {
+  const btn = document.getElementById('submit-btn');
+
+  // collect inputs
+  const fields = ['age','bmi','age_menarche','age_menopause','parity',
+    'breastfeeding','breastfeed_years','family_history_1st',
+    'family_history_2nd','brca_mutation','alcohol_drinks_week',
+    'smoking','physical_activity','hrt_use','oral_contraceptive_use',
+    'prior_benign_biopsy','ggt','alt'];
+
+  const data = {};
+  for (const f of fields) {
+    const el = document.getElementById(f);
+    const val = el.value;
+    if (val === '' || val === null) {
+      el.style.borderColor = 'var(--accent)';
+      el.focus();
+      return;
+    }
+    el.style.borderColor = '';
+    data[f] = parseFloat(val);
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Calculating...';
+
+  try {
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+
+    if (result.error) {
+      alert('Error: ' + result.error);
+      return;
+    }
+
+    // display result
+    const resultEl = document.getElementById('result');
+    resultEl.style.display = 'block';
+    resultEl.scrollIntoView({behavior:'smooth', block:'start'});
+
+    document.getElementById('risk-score-num').textContent = result.risk_score;
+    document.getElementById('risk-score-num').style.color = result.color;
+    document.getElementById('risk-category').textContent = result.category;
+    document.getElementById('risk-category').style.color = result.color;
+
+    // animate bar
+    setTimeout(() => {
+      document.getElementById('risk-bar').style.width = result.risk_score + '%';
+      document.getElementById('risk-bar').style.background =
+        `linear-gradient(90deg, #00e5a0, ${result.color})`;
+    }, 100);
+
+    // recommendation
+    const recEl = document.getElementById('recommendation');
+    recEl.textContent = result.recommendation;
+    recEl.style.borderColor = result.color;
+    recEl.style.background = result.color + '11';
+    recEl.style.color = result.color;
+
+    // factors
+    const factorsList = document.getElementById('factors-list');
+    factorsList.innerHTML = result.top_factors.map(f =>
+      `<div class="factor-item"><div class="factor-dot"></div><span>${f}</span></div>`
+    ).join('');
+
+    document.getElementById('disclaimer-text').textContent = result.disclaimer;
+
+  } catch(e) {
+    alert('Connection error. Make sure the Flask server is running.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Calculate Risk Score →';
+  }
+}
+</script>
+</body>
+</html>
+```
